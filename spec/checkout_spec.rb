@@ -1,11 +1,13 @@
 class Checkout
-	attr_reader :subtotal
+	attr_reader :subtotal, :total
 	def initialize
 		@subtotal = 0
+		@total		= 0
 	end
 
 	def scan(item)
 		@subtotal += item.price
+		@total = @subtotal
 	end
 end
 
@@ -34,5 +36,11 @@ describe Checkout do
 			expect(checkout.subtotal).to eq(80)
 		end
 
+		it "if items have no discount rules, none applied to the total" do
+			checkout = Checkout.new
+			checkout.scan(Item.new("A", 50))
+			checkout.scan(Item.new("B", 30))
+			expect(checkout.total).to eq(80)
+		end
 	end
 end
