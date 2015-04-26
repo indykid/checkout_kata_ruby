@@ -13,13 +13,23 @@ class Checkout
 			@items[item.barcode] = 1
 		end
 		@subtotal += item.price
-		@total = @subtotal
-		@total = 95 if quantity(item) == 2
+		
+		
+		if discount_rules[item.barcode] && items[item.barcode].to_i >= discount_rules[item.barcode][:quantity]
+			@total = @subtotal - (items[item.barcode] / discount_rules[item.barcode][:quantity]).floor * discount_rules[item.barcode][:amount]
+		else
+			@total = @subtotal
+		end
 	end
 
 	def quantity(item)
 	#puts items
 		items[item.barcode]
+	end
+
+	def discount_rules
+		{ "A" => { quantity: 3, amount: 20 },
+			"B" => { quantity: 2, amount: 15 } }
 	end
 end
 
@@ -71,6 +81,14 @@ describe Checkout do
 			expect(checkout.total).to eq(95)
 		end
 
+		it "if we have 3 of the same item, but discount works for 2, it is applied correctly" do
+			checkout = Checkout.new
+			checkout.scan(Item.new("A", 50))
+			checkout.scan(Item.new("B", 30))
+			checkout.scan(Item.new("B", 30))
+			checkout.scan(Item.new("B", 30))
+			expect(checkout.total).to eq(125)
+		end
 
 
 
