@@ -7,13 +7,8 @@ class Checkout
 	end
 
 	def scan(item)
-		if items[item.barcode]
-			@items[item.barcode] += 1
-		else
-			@items[item.barcode] = 1
-		end
 		@subtotal += item.price
-		
+		update_items(item)	
 		
 		if discount_rules[item.barcode] && items[item.barcode].to_i >= discount_rules[item.barcode][:quantity]
 			@total = @subtotal - (items[item.barcode] / discount_rules[item.barcode][:quantity]).floor * discount_rules[item.barcode][:amount]
@@ -22,6 +17,13 @@ class Checkout
 		end
 	end
 
+	def update_items(item)
+		if items[item.barcode]
+			@items[item.barcode] += 1
+		else
+			@items[item.barcode] = 1
+		end
+	end
 	def quantity(item)
 	#puts items
 		items[item.barcode]
