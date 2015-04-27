@@ -12,12 +12,17 @@ class Checkout
 		update_total(item)	
 	end
 
+	private
 	def update_items(item)
 		if items[item.barcode]
 			@items[item.barcode] += 1
 		else
 			@items[item.barcode] = 1
 		end
+	end
+
+	def update_subtotal(item)
+		@subtotal += item.price
 	end
 
 	def update_total(item)
@@ -46,10 +51,6 @@ class Checkout
 
 	def discount_amount(item)
 		discount_rules[item.barcode][:amount]
-	end
-
-	def update_subtotal(item)
-		@subtotal += item.price
 	end
 
 	def quantity(item)
@@ -121,7 +122,14 @@ describe Checkout do
 		end
 
 
-
+		it "if we have 4 of the same item, and discount works for 2, discount is applied twice" do
+			checkout = Checkout.new
+			checkout.scan(Item.new("B", 30))
+			checkout.scan(Item.new("B", 30))
+			checkout.scan(Item.new("B", 30))
+			checkout.scan(Item.new("B", 30))
+			expect(checkout.total).to eq(90)
+		end
 
 
 
