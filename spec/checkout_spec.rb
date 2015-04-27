@@ -1,23 +1,23 @@
 class Checkout
-	attr_reader :subtotal, :total, :items
+	attr_reader :subtotal, :total, :tally
 	def initialize
 		@subtotal = 0
 		@total		= 0
-		@items		= {}
+		@tally		= {}
 	end
 
 	def scan(item)
-		update_items(item)	
+		update_tally(item)	
 		update_subtotal(item)
 		update_total(item)	
 	end
 
 	private
-	def update_items(item)
-		if items[item.barcode]
-			@items[item.barcode] += 1
+	def update_tally(item)
+		if tally[item.barcode]
+			@tally[item.barcode] += 1
 		else
-			@items[item.barcode] = 1
+			@tally[item.barcode] = 1
 		end
 	end
 
@@ -26,36 +26,37 @@ class Checkout
 	end
 
 	def update_total(item)
- 		if discount_exists?(item) && item_quantity(item) >= discount_quantity(item)
-			@total = @subtotal - calculate_discount(item)
-		else
-			@total = @subtotal
+		#discount = 0
+		discount = tally.each_key.reduce(0) do |sum, k|
+ 			discount_exists?(k) && item_quantity(k) >= discount_quantity(k) ? sum += calculate_discount(k) : sum
 		end
+puts discount
+		@total = subtotal - discount
 	end
 
-	def calculate_discount(item)
-	  (item_quantity(item) / discount_quantity(item)).floor * discount_amount(item)
+	def calculate_discount(barcode)
+	  (item_quantity(barcode) / discount_quantity(barcode)).floor * discount_amount(barcode)
 	end
 
-	def item_quantity(item)
-		items[item.barcode].to_i
+	def item_quantity(barcode)
+		tally[barcode].to_i
 	end
 
-	def discount_exists?(item)
-		discount_rules[item.barcode]
+	def discount_exists?(barcode)
+		discount_rules[barcode]
 	end
 
-	def discount_quantity(item)
-		discount_rules[item.barcode][:quantity]
+	def discount_quantity(barcode)
+		discount_rules[barcode][:quantity]
 	end
 
-	def discount_amount(item)
-		discount_rules[item.barcode][:amount]
+	def discount_amount(barcode)
+		discount_rules[barcode][:amount]
 	end
 
 	def quantity(item)
-	#puts items
-		items[item.barcode]
+	#puts tally
+		tally[item.barcode]
 	end
 
 	def discount_rules
@@ -112,6 +113,15 @@ describe Checkout do
 			expect(checkout.total).to eq(95)
 		end
 
+		it "if item has a discount it is applied to the total" do
+			checkout = Checkout.new
+			checkout.scan(Item.new("B", 30))
+			checkout.scan(Item.new("A", 50))
+			checkout.scan(Item.new("A", 50))
+			checkout.scan(Item.new("A", 50))
+			expect(checkout.total).to eq(160)
+		end
+
 		it "if we have 3 of the same item, but discount works for 2, it is applied correctly" do
 			checkout = Checkout.new
 			checkout.scan(Item.new("A", 50))
@@ -120,7 +130,6 @@ describe Checkout do
 			checkout.scan(Item.new("B", 30))
 			expect(checkout.total).to eq(125)
 		end
-
 
 		it "if we have 4 of the same item, and discount works for 2, discount is applied twice" do
 			checkout = Checkout.new
@@ -131,7 +140,15 @@ describe Checkout do
 			expect(checkout.total).to eq(90)
 		end
 
-
+		it "if we have more than one set of items where discounts are applicable, all discounts are applied" do
+			checkout = Checkout.new
+			checkout.scan(Item.new("B", 30))
+			checkout.scan(Item.new("B", 30))
+			checkout.scan(Item.new("A", 50))
+			checkout.scan(Item.new("A", 50))
+			checkout.scan(Item.new("A", 50))
+			expect(checkout.total).to eq(175)
+		end
 
 
 
