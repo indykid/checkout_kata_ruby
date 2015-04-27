@@ -26,12 +26,14 @@ class Checkout
 	end
 
 	def update_total(item)
-		#discount = 0
 		discount = tally.each_key.reduce(0) do |sum, k|
- 			discount_exists?(k) && item_quantity(k) >= discount_quantity(k) ? sum += calculate_discount(k) : sum
+ 			discount_applicable?(k) ? sum += calculate_discount(k) : sum
 		end
-puts discount
 		@total = subtotal - discount
+	end
+
+	def discount_applicable?(barcode)
+ 		discount_exists?(barcode) && item_quantity(barcode) >= discount_quantity(barcode)
 	end
 
 	def calculate_discount(barcode)
