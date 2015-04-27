@@ -21,11 +21,31 @@ class Checkout
 	end
 
 	def update_total(item)
-		if discount_rules[item.barcode] && items[item.barcode].to_i >= discount_rules[item.barcode][:quantity]
-			@total = @subtotal - (items[item.barcode] / discount_rules[item.barcode][:quantity]).floor * discount_rules[item.barcode][:amount]
+ 		if discount_exists?(item) && item_quantity(item) >= discount_quantity(item)
+			@total = @subtotal - calculate_discount(item)
 		else
 			@total = @subtotal
 		end
+	end
+
+	def calculate_discount(item)
+	  (item_quantity(item) / discount_quantity(item)).floor * discount_amount(item)
+	end
+
+	def item_quantity(item)
+		items[item.barcode].to_i
+	end
+
+	def discount_exists?(item)
+		discount_rules[item.barcode]
+	end
+
+	def discount_quantity(item)
+		discount_rules[item.barcode][:quantity]
+	end
+
+	def discount_amount(item)
+		discount_rules[item.barcode][:amount]
 	end
 
 	def update_subtotal(item)
